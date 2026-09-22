@@ -19,6 +19,17 @@ h1{text-align:center}
 .detail .meta{color:#666;margin-bottom:12px}
 .detail .reason{background:#fff;padding:15px;border-radius:6px;border:1px solid #e2e6ea}
 .detail .note{font-size:13px;color:#777;margin-top:12px}
+.modal{display:none;position:fixed;z-index:9999;inset:0;background:rgba(0,0,0,.55);align-items:center;justify-content:center;padding:20px}
+.modal.show{display:flex}
+.modal-card{position:relative;width:min(680px,94vw);max-height:85vh;overflow:auto;background:#fff;border-radius:16px;padding:30px;box-shadow:0 15px 50px rgba(0,0,0,.25);animation:pop .18s ease-out}
+@keyframes pop{from{transform:scale(.96);opacity:0}to{transform:scale(1);opacity:1}}
+.modal-close{position:absolute;right:18px;top:12px;border:0;background:none;font-size:30px;color:#666;cursor:pointer}
+.modal-tag{display:inline-block;background:#eef2f5;border-radius:999px;padding:5px 12px;font-size:13px;color:#555;margin-bottom:10px}
+.modal-card h2{margin:0 35px 8px 0;font-size:25px}
+.modal-meta{font-size:16px;color:#555;margin:10px 0 20px}
+.modal-reason{background:#f8fafc;border-left:5px solid #4C72B0;border-radius:8px;padding:18px;font-size:17px;line-height:1.8}
+.modal-reason strong{display:block;margin-bottom:6px}
+.modal-note{font-size:13px;color:#777;margin-top:18px;line-height:1.6}
 </style>
 </head>
 <body>
@@ -37,6 +48,12 @@ h1{text-align:center}
 <div id="annualDetail" class="detail"></div>
 <div id="quarterly" class="chart"></div>
 <div id="quarterlyDetail" class="detail"></div>
+<div id="reasonModal" class="modal" onclick="closeReason(event)">
+  <div class="modal-card" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closeReason()" aria-label="關閉">×</button>
+    <div id="modalContent"></div>
+  </div>
+</div>
 </div>
 <script>
 const years=["2015","2016","2017","2018","2019","2020","2021","2022","2023","2024","2025"];
@@ -70,15 +87,30 @@ hovertemplate:"<b>%{x}年</b><br>成長率: %{y}%<br><i>點擊查看成長原因
 ],{title:"圖一：台積電年度營收淨額與營收成長率",xaxis:{title:"年度"},yaxis:{title:"營收（億元）"},yaxis2:{title:"成長率 (%)",overlaying:"y",side:"right"},hovermode:"x unified",margin:{t:70,b:60},legend:{orientation:"h"}},{responsive:true});
 
 function showAnnual(i){
-const y=years[i],box=document.getElementById("annualDetail");
-box.innerHTML="<h2>📌 "+y+" 年："+annualReasonTitle[y]+"</h2>"+
-"<div class='meta'>營收：<strong>"+revenue[i].toLocaleString()+" 億元</strong>　｜　營收成長率：<strong>"+growth[i].toFixed(2)+"%</strong></div>"+
-"<div class='reason'><strong>成長／下滑原因：</strong><br>"+annualReasons[y]+"</div>"+
-"<div class='note'>※ 原因為依產業趨勢與台積電公開資訊整理，圖表數值依本專題資料。</div>";
-box.classList.add("show");
-box.scrollIntoView({behavior:"smooth",block:"nearest"});
+const y=years[i];
+openReasonModal("年度資料",y+" 年："+annualReasonTitle[y],
+"營收："+revenue[i].toLocaleString()+" 億元　｜　營收成長率："+growth[i].toFixed(2)+"%",
+annualReasons[y],
+"※ 原因為依產業趨勢與台積電公開資訊整理，圖表數值依本專題資料。");
 }
 document.getElementById("annual").on("plotly_click",function(data){if(data.points&&data.points.length)showAnnual(data.points[0].pointNumber);});
+function openReasonModal(tag,title,meta,reason,note){
+document.getElementById("modalContent").innerHTML=
+"<div class='modal-tag'>"+tag+"</div>"+
+"<h2>📌 "+title+"</h2>"+
+"<div class='modal-meta'>"+meta+"</div>"+
+"<div class='modal-reason'><strong>📈 成長／下滑原因</strong>"+reason+"</div>"+
+"<div class='modal-note'>"+note+"</div>";
+document.getElementById("reasonModal").classList.add("show");
+document.body.style.overflow="hidden";
+}
+function closeReason(event){
+if(event && event.target!==event.currentTarget)return;
+document.getElementById("reasonModal").classList.remove("show");
+document.body.style.overflow="";
+}
+document.addEventListener("keydown",function(e){if(e.key==="Escape")closeReason();});
+
 
 const q=["23Q1","23Q2","23Q3","23Q4","24Q1","24Q2","24Q3","24Q4","25Q1","25Q2","25Q3","25Q4","26Q1","26Q2"];
 const qr=[5086,4808,5467,6255,5926,6735,7596,8684,8392,9337,9899,10460,11341,12703];
@@ -110,13 +142,11 @@ Plotly.newPlot("quarterly",[
 ],{title:"圖二：台積電季度營收淨額與營業毛利成長率",xaxis:{title:"季度"},yaxis:{title:"營收（億元）"},yaxis2:{title:"毛利成長率 (%)",overlaying:"y",side:"right"},hovermode:"x unified",margin:{t:70,b:70},legend:{orientation:"h"}},{responsive:true});
 
 function showQuarter(i){
-const period=q[i],box=document.getElementById("quarterlyDetail");
-box.innerHTML="<h2>📌 "+period+"："+qReasonTitle[period]+"</h2>"+
-"<div class='meta'>營收：<strong>"+qr[i].toLocaleString()+" 億元</strong>　｜　營業毛利成長率：<strong>"+qg[i].toFixed(2)+"%</strong></div>"+
-"<div class='reason'><strong>成長／下滑原因：</strong><br>"+qReasons[period]+"</div>"+
-"<div class='note'>※ 原因為依產業趨勢與本專題分析整理；正式報告引用時，建議搭配台積電各季法說會資料。</div>";
-box.classList.add("show");
-box.scrollIntoView({behavior:"smooth",block:"nearest"});
+const period=q[i];
+openReasonModal("季度資料",period+"："+qReasonTitle[period],
+"營收："+qr[i].toLocaleString()+" 億元　｜　營業毛利成長率："+qg[i].toFixed(2)+"%",
+qReasons[period],
+"※ 原因為依產業趨勢與本專題分析整理；正式報告引用時，建議搭配台積電各季法說會資料。");
 }
 document.getElementById("quarterly").on("plotly_click",function(data){if(data.points&&data.points.length)showQuarter(data.points[0].pointNumber);});
 </script>
