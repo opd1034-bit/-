@@ -9,10 +9,16 @@
 body{font-family:"Microsoft JhengHei",Arial,sans-serif;background:#f4f6f8;padding:20px;color:#333}
 .container{max-width:1100px;margin:auto;background:#fff;padding:30px;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,.1)}
 h1{text-align:center}
-.text-box{background:#eef2f5;padding:25px;border-left:6px solid #4C72B0;border-radius:6px;margin-bottom:30px;line-height:1.8;font-size:16px}
+.text-box{background:#eef2f5;padding:25px;border-left:6px solid #4C72B0;border-radius:6px;margin-bottom:25px;line-height:1.8;font-size:16px}
 .text-box p{margin:0 0 15px}
-.chart{width:100%;height:620px;margin:20px 0 40px}
-.hint{text-align:center;color:#777;font-size:14px}
+.chart{width:100%;height:620px;margin:20px 0 25px}
+.hint{text-align:center;color:#666;font-size:15px;margin:10px 0 18px}
+.detail{display:none;background:#f8fafc;border:1px solid #d8dee6;border-left:6px solid #4C72B0;border-radius:8px;padding:22px;margin:10px 0 35px;line-height:1.75}
+.detail.show{display:block}
+.detail h2{margin:0 0 8px;font-size:22px}
+.detail .meta{color:#666;margin-bottom:12px}
+.detail .reason{background:#fff;padding:15px;border-radius:6px;border:1px solid #e2e6ea}
+.detail .note{font-size:13px;color:#777;margin-top:12px}
 </style>
 </head>
 <body>
@@ -26,26 +32,93 @@ h1{text-align:center}
 <p><strong>2026 年：</strong>第一季營收約 1.13 兆元，第二季約 1.27 兆元，第二季年增 36%，毛利率達 67.7%。</p>
 <p>綜合來看，最值得注意的是<strong>營收規模持續擴大、先進製程占比提高，以及營收成長與獲利能力同步改善</strong>，成長來源逐漸轉向更高價值的 AI、HPC 與先進運算應用。</p>
 </div>
-<p class="hint">💡 將游標移到圖表數據點，可查看該時期的動能分析。</p>
+<p class="hint">💡 <strong>請直接點擊圖上的任一資料點或柱狀圖</strong>，下方會顯示該年度／季度的營收、成長率與「成長／下滑原因」。</p>
 <div id="annual" class="chart"></div>
+<div id="annualDetail" class="detail"></div>
 <div id="quarterly" class="chart"></div>
+<div id="quarterlyDetail" class="detail"></div>
 </div>
 <script>
 const years=["2015","2016","2017","2018","2019","2020","2021","2022","2023","2024","2025"];
 const revenue=[8434,9479,9774,10314,10699,13391,15874,22638,21617,28841,38090];
 const growth=[0,12.38,3.11,5.52,3.73,25.16,18.54,42.61,-4.51,33.41,32.07];
+
+const annualReasons={
+"2015":"智慧型手機與行動裝置需求仍是主要支撐，20nm 等先進製程逐步擴大，帶動晶圓需求。",
+"2016":"16nm 先進製程量產與高階行動裝置需求增加，帶動營收溫和成長。",
+"2017":"10nm 開始量產，加上行動通訊、高效能運算等需求，使先進製程占比提高。",
+"2018":"7nm 開始量產並擴大出貨，先進製程需求成為主要成長動能。",
+"2019":"受到全球半導體景氣與部分終端市場調整影響，全年成長幅度較小。",
+"2020":"5G 智慧型手機、高效能運算（HPC）與先進製程需求增加，加上疫情帶動數位化需求，推升營收。",
+"2021":"5G、HPC、車用電子等需求強勁，產能利用率高，5nm 等先進製程持續擴大。",
+"2022":"HPC 與智慧型手機等需求，加上 5nm／4nm 先進製程快速成長，推動全年營收創高。",
+"2023":"全球半導體產業進行庫存調整，消費性電子需求疲弱，造成營收下滑；同時產能利用率下降也壓抑獲利。",
+"2024":"AI 伺服器與 HPC 需求快速成長，5nm／3nm 等先進製程需求增加，帶動營收明顯回升。",
+"2025":"AI、HPC 與先進運算需求持續強勁，先進製程產品組合改善，推動營收維持高速成長。"
+};
+
+const annualReasonTitle={
+"2015":"溫和成長：行動裝置與先進製程","2016":"穩定成長：16nm 與高階手機","2017":"成長加速：10nm 量產","2018":"先進製程放量：7nm","2019":"景氣調整：成長趨緩","2020":"高速成長：5G + HPC","2021":"需求擴張：5G + HPC + 車用","2022":"高成長：先進製程與 HPC","2023":"下滑：庫存調整","2024":"強勁復甦：AI + HPC","2025":"高速成長：AI 與先進運算"
+};
+
 Plotly.newPlot("annual",[
-{x:years,y:revenue,type:"bar",name:"營收淨額 (億元)",marker:{color:"#4C72B0"},opacity:.8,hovertemplate:"<b>%{x}年</b><br>營收: %{y} 億元<extra></extra>"},
-{x:years,y:growth,type:"scatter",mode:"lines+markers",name:"營收成長率 (%)",yaxis:"y2",line:{color:"#C44E52"},marker:{color:"#C44E52"},hovertemplate:"<b>%{x}年</b><br>成長率: %{y}%<extra></extra>"}
-],{title:"圖一：台積電年度營收淨額與營收成長率",xaxis:{title:"年度"},yaxis:{title:"營收（億元）"},yaxis2:{title:"成長率 (%)",overlaying:"y",side:"right"},hovermode:"x unified",margin:{t:70,b:60},legend:{orientation:"h"}} ,{responsive:true});
+{x:years,y:revenue,type:"bar",name:"營收淨額 (億元)",marker:{color:"#4C72B0"},opacity:.8,
+hovertemplate:"<b>%{x}年</b><br>營收: %{y} 億元<br><i>點擊查看成長原因</i><extra></extra>"},
+{x:years,y:growth,type:"scatter",mode:"lines+markers",name:"營收成長率 (%)",yaxis:"y2",
+line:{color:"#C44E52"},marker:{color:"#C44E52",size:9},
+hovertemplate:"<b>%{x}年</b><br>成長率: %{y}%<br><i>點擊查看成長原因</i><extra></extra>"}
+],{title:"圖一：台積電年度營收淨額與營收成長率",xaxis:{title:"年度"},yaxis:{title:"營收（億元）"},yaxis2:{title:"成長率 (%)",overlaying:"y",side:"right"},hovermode:"x unified",margin:{t:70,b:60},legend:{orientation:"h"}},{responsive:true});
+
+function showAnnual(i){
+const y=years[i],box=document.getElementById("annualDetail");
+box.innerHTML="<h2>📌 "+y+" 年："+annualReasonTitle[y]+"</h2>"+
+"<div class='meta'>營收：<strong>"+revenue[i].toLocaleString()+" 億元</strong>　｜　營收成長率：<strong>"+growth[i].toFixed(2)+"%</strong></div>"+
+"<div class='reason'><strong>成長／下滑原因：</strong><br>"+annualReasons[y]+"</div>"+
+"<div class='note'>※ 原因為依產業趨勢與台積電公開資訊整理，圖表數值依本專題資料。</div>";
+box.classList.add("show");
+box.scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+document.getElementById("annual").on("plotly_click",function(data){if(data.points&&data.points.length)showAnnual(data.points[0].pointNumber);});
 
 const q=["23Q1","23Q2","23Q3","23Q4","24Q1","24Q2","24Q3","24Q4","25Q1","25Q2","25Q3","25Q4","26Q1","26Q2"];
 const qr=[5086,4808,5467,6255,5926,6735,7596,8684,8392,9337,9899,10460,11341,12703];
 const qg=[4.87,-17.52,-19.93,-14.75,9.77,37.63,48.11,54.44,56.88,52.84,33.96,27.25,52.27,57.17];
+
+const qReasons={
+"23Q1":"全球半導體庫存調整仍在進行，消費性電子需求偏弱，因此毛利成長受到壓力。",
+"23Q2":"庫存去化尚未完全結束，PC、智慧型手機等終端需求疲弱，使毛利成長率轉為負值。",
+"23Q3":"庫存調整與終端需求疲弱仍影響營運；雖部分新產品需求改善，但整體復甦仍有限。",
+"23Q4":"先進製程需求開始改善，AI/HPC 相關需求提供支撐，但整體產業仍處於調整後段。",
+"24Q1":"3nm 需求增加與 HPC 應用支撐成長，但第一季仍受到季節性因素影響。",
+"24Q2":"AI 伺服器、HPC 與先進製程需求明顯增加，推升營收及毛利成長。",
+"24Q3":"AI/HPC 需求持續強勁，加上 3nm 放量與部分終端產品旺季，帶動成長。",
+"24Q4":"AI 加速器與 HPC 需求持續，先進製程產品組合改善，推升毛利成長。",
+"25Q1":"AI 與 HPC 需求持續擴張，先進製程占比提高，使毛利成長維持高檔。",
+"25Q2":"AI 相關運算需求強勁，先進製程持續放量，帶動營收與毛利成長。",
+"25Q3":"AI/HPC 需求仍是主要動能，先進製程產品組合持續改善。",
+"25Q4":"AI 與高效能運算需求延續，先進製程出貨及產品組合支撐成長。",
+"26Q1":"AI、HPC 與先進運算需求延續，先進製程產品組合持續支撐毛利成長。",
+"26Q2":"AI/HPC 需求維持強勁，先進製程與高價值產品占比提高，帶動毛利成長。"
+};
+const qReasonTitle={
+"23Q1":"庫存調整","23Q2":"庫存去化延續","23Q3":"景氣仍弱","23Q4":"復甦初期","24Q1":"3nm + HPC","24Q2":"AI + HPC 加速","24Q3":"AI + 3nm 放量","24Q4":"AI/HPC + 先進製程","25Q1":"AI/HPC 延續","25Q2":"AI + 先進製程","25Q3":"AI/HPC 支撐","25Q4":"AI/HPC 延續","26Q1":"AI + 先進運算","26Q2":"AI/HPC 強勁"
+};
+
 Plotly.newPlot("quarterly",[
-{x:q,y:qr,type:"bar",name:"營收淨額 (億元)",marker:{color:"#55A868"},opacity:.8,hovertemplate:"<b>%{x}</b><br>營收: %{y} 億元<extra></extra>"},
-{x:q,y:qg,type:"scatter",mode:"lines+markers",name:"營業毛利成長率 (%)",yaxis:"y2",line:{color:"#DD8452"},marker:{color:"#DD8452",symbol:"square"},hovertemplate:"<b>%{x}</b><br>毛利成長率: %{y}%<extra></extra>"}
-],{title:"圖二：台積電季度營收淨額與營業毛利成長率",xaxis:{title:"季度"},yaxis:{title:"營收（億元）"},yaxis2:{title:"毛利成長率 (%)",overlaying:"y",side:"right"},hovermode:"x unified",margin:{t:70,b:70},legend:{orientation:"h"}} ,{responsive:true});
+{x:q,y:qr,type:"bar",name:"營收淨額 (億元)",marker:{color:"#55A868"},opacity:.8,hovertemplate:"<b>%{x}</b><br>營收: %{y} 億元<br><i>點擊查看成長原因</i><extra></extra>"},
+{x:q,y:qg,type:"scatter",mode:"lines+markers",name:"營業毛利成長率 (%)",yaxis:"y2",line:{color:"#DD8452"},marker:{color:"#DD8452",symbol:"square",size:9},hovertemplate:"<b>%{x}</b><br>毛利成長率: %{y}%<br><i>點擊查看成長原因</i><extra></extra>"}
+],{title:"圖二：台積電季度營收淨額與營業毛利成長率",xaxis:{title:"季度"},yaxis:{title:"營收（億元）"},yaxis2:{title:"毛利成長率 (%)",overlaying:"y",side:"right"},hovermode:"x unified",margin:{t:70,b:70},legend:{orientation:"h"}},{responsive:true});
+
+function showQuarter(i){
+const period=q[i],box=document.getElementById("quarterlyDetail");
+box.innerHTML="<h2>📌 "+period+"："+qReasonTitle[period]+"</h2>"+
+"<div class='meta'>營收：<strong>"+qr[i].toLocaleString()+" 億元</strong>　｜　營業毛利成長率：<strong>"+qg[i].toFixed(2)+"%</strong></div>"+
+"<div class='reason'><strong>成長／下滑原因：</strong><br>"+qReasons[period]+"</div>"+
+"<div class='note'>※ 原因為依產業趨勢與本專題分析整理；正式報告引用時，建議搭配台積電各季法說會資料。</div>";
+box.classList.add("show");
+box.scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+document.getElementById("quarterly").on("plotly_click",function(data){if(data.points&&data.points.length)showQuarter(data.points[0].pointNumber);});
 </script>
 </body>
 </html>
