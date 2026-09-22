@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>台積電營收與成長趨勢分析</title>
+<script src="https://cdn.plot.ly/plotly-3.3.0.min.js"></script>
+<style>
+body{font-family:"Microsoft JhengHei",Arial,sans-serif;background:#f4f6f8;padding:20px;color:#333}
+.container{max-width:1100px;margin:auto;background:#fff;padding:30px;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,.1)}
+h1{text-align:center}
+.text-box{background:#eef2f5;padding:25px;border-left:6px solid #4C72B0;border-radius:6px;margin-bottom:30px;line-height:1.8;font-size:16px}
+.text-box p{margin:0 0 15px}
+.chart{width:100%;height:620px;margin:20px 0 40px}
+.hint{text-align:center;color:#777;font-size:14px}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>台積電營收與成長趨勢互動分析</h1>
+<div class="text-box">
+<p>由 2015 至 2025 年的年度營收可以觀察到，台積電營收呈現長期成長趨勢，但成長過程具有明顯的半導體景氣循環特徵。2015 年營收約 8,434 億元，至 2025 年已成長至約 3.81 兆元，十年間約增加 4.5 倍。</p>
+<p><strong>2020 至 2022 年是重要成長階段。</strong>受 5G、HPC 及先進製程需求帶動，2020 年營收年增 25.2%；2022 年營收更達 2.26 兆元，年增 42.6%。</p>
+<p><strong>2023 年出現明顯修正。</strong>受到全球半導體產業庫存調整影響，台積電營收下降 4.5%，毛利率亦由前一年的 59.6% 降至 54.4%。</p>
+<p><strong>2024 年之後重新進入高速成長階段。</strong>2025 年營收進一步增加至 3.81 兆元，年增 31.6%；2025 年毛利率達 59.9%，淨利年增 46.4%。</p>
+<p><strong>2026 年：</strong>第一季營收約 1.13 兆元，第二季約 1.27 兆元，第二季年增 36%，毛利率達 67.7%。</p>
+<p>綜合來看，最值得注意的是<strong>營收規模持續擴大、先進製程占比提高，以及營收成長與獲利能力同步改善</strong>，成長來源逐漸轉向更高價值的 AI、HPC 與先進運算應用。</p>
+</div>
+<p class="hint">💡 將游標移到圖表數據點，可查看該時期的動能分析。</p>
+<div id="annual" class="chart"></div>
+<div id="quarterly" class="chart"></div>
+</div>
+<script>
+const years=["2015","2016","2017","2018","2019","2020","2021","2022","2023","2024","2025"];
+const revenue=[8434,9479,9774,10314,10699,13391,15874,22638,21617,28841,38090];
+const growth=[0,12.38,3.11,5.52,3.73,25.16,18.54,42.61,-4.51,33.41,32.07];
+Plotly.newPlot("annual",[
+{x:years,y:revenue,type:"bar",name:"營收淨額 (億元)",marker:{color:"#4C72B0"},opacity:.8,hovertemplate:"<b>%{x}年</b><br>營收: %{y} 億元<extra></extra>"},
+{x:years,y:growth,type:"scatter",mode:"lines+markers",name:"營收成長率 (%)",yaxis:"y2",line:{color:"#C44E52"},marker:{color:"#C44E52"},hovertemplate:"<b>%{x}年</b><br>成長率: %{y}%<extra></extra>"}
+],{title:"圖一：台積電年度營收淨額與營收成長率",xaxis:{title:"年度"},yaxis:{title:"營收（億元）"},yaxis2:{title:"成長率 (%)",overlaying:"y",side:"right"},hovermode:"x unified",margin:{t:70,b:60},legend:{orientation:"h"}} ,{responsive:true});
+
+const q=["23Q1","23Q2","23Q3","23Q4","24Q1","24Q2","24Q3","24Q4","25Q1","25Q2","25Q3","25Q4","26Q1","26Q2"];
+const qr=[5086,4808,5467,6255,5926,6735,7596,8684,8392,9337,9899,10460,11341,12703];
+const qg=[4.87,-17.52,-19.93,-14.75,9.77,37.63,48.11,54.44,56.88,52.84,33.96,27.25,52.27,57.17];
+Plotly.newPlot("quarterly",[
+{x:q,y:qr,type:"bar",name:"營收淨額 (億元)",marker:{color:"#55A868"},opacity:.8,hovertemplate:"<b>%{x}</b><br>營收: %{y} 億元<extra></extra>"},
+{x:q,y:qg,type:"scatter",mode:"lines+markers",name:"營業毛利成長率 (%)",yaxis:"y2",line:{color:"#DD8452"},marker:{color:"#DD8452",symbol:"square"},hovertemplate:"<b>%{x}</b><br>毛利成長率: %{y}%<extra></extra>"}
+],{title:"圖二：台積電季度營收淨額與營業毛利成長率",xaxis:{title:"季度"},yaxis:{title:"營收（億元）"},yaxis2:{title:"毛利成長率 (%)",overlaying:"y",side:"right"},hovermode:"x unified",margin:{t:70,b:70},legend:{orientation:"h"}} ,{responsive:true});
+</script>
+</body>
+</html>
