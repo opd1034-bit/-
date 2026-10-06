@@ -1,304 +1,196 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import plotly.graph_objects as go
-import os
-import re
+from plotly.subplots import make_subplots
+from pathlib import Path
 
-# ==========================================
-# 頁面配置與核心知識庫定義
-# ==========================================
-st.set_page_config(page_title="台灣總體經濟歷史知識儀表板", layout="wide")
+st.set_page_config(page_title="台積電(2330)估值動態分析儀", layout="wide")
 
-# 定義指標標準名稱（用於內部映射和介面顯示）
-ID_利率 = '重貼現率 (%)'
-ID_失業 = '失業率 (%)'
-ID_通膨 = '通膨率 (CPI %)'
-ID_成長 = '經濟成長率 (%)'
-ID_GDP = '平均個人名目GDP (元)'
-ID_貿易 = '貿易順逆差 (百萬美元)'
-ID_M2 = 'M2供給成長率 (%)'
+# Streamlit Cloud 是 Linux 環境，不能使用 Windows 的 C:\Users\... 絕對路徑。
+# 因此改成讀取 GitHub repository 根目錄的資料檔。
+BASE_DIR = Path(__file__).resolve().parent
+FILE_QUARTERLY = BASE_DIR / "20261006112135.txt"
+FILE_DAILY = BASE_DIR / "20261006111625.txt"
 
-# 核心知識庫：分別顯示會影響各指標之公開事件及其影響機制
-MACRO_EVENTS_KNOWLEDGE_BASE = {
-    ID_利率: [
-        {"name": "全球金融海嘯", "start": 2008, "end": 2009, "type": "policy", "desc": "雷曼兄弟破產引發全球流動性枯竭。央行進入降息循環，大幅調降利率至歷史低點以提供市場流動性。"},
-        {"name": "全球通膨升息潮", "start": 2022, "end": 2023, "type": "policy", "desc": "疫情後需求爆發及俄烏戰爭致原物料大漲，美聯準會激進升息。台灣央行為抑制輸入性通膨及縮小台美利差，連續調升利率。"}
-    ],
-    ID_M2: [
-        {"name": "「台灣錢淹腳目」時期", "start": 1986, "end": 1989, "type": "positive", "desc": "長期鉅額貿易順差疊加《廣場協議》後新台幣升值壓力，熱錢湧入。央行進場買匯釋放新台幣，致M2供給率屢破20%，催生資產泡沫。"},
-        {"name": "新冠疫情 QE 狂潮", "start": 2020, "end": 2021, "type": "positive", "desc": "全球央行實施無上限量化寬鬆(QE)，加上台灣受惠遠距商機出口極佳、企業資金回流，市場資金極度充沛。"}
-    ],
-    ID_成長: [
-        {"name": "第一次石油危機", "start": 1973, "end": 1974, "type": "negative", "desc": "中東戰爭致油價暴漲，引發全球「停滯性通膨」。台灣高度依賴能源進口，生產成本飆升、外銷受阻，經濟成長斷崖式衰退。"},
-        {"name": "第二次石油危機", "start": 1979, "end": 1980, "type": "negative", "desc": "伊朗革命引發第二次能源衝擊，全球經濟再度陷入衰退，台灣出口導向經濟受挫。"},
-        {"name": "網際網路泡沫破裂", "start": 2000, "end": 2001, "type": "negative", "desc": "美國科技股崩盤，嚴重衝擊全球電子產業需求。台灣因電子零組件出口佔比極高，創下戰後首次全年經濟負成長(-1.26%)。"},
-        {"name": "中美貿易戰 (台商回流)", "start": 2018, "end": 2021, "type": "positive", "desc": "美國對中加徵關稅，引發供應鏈重組。政府推動台商回流投資，帶動本土固定資產投資與高階製造產能上升。"}
-    ],
-    ID_失業: [
-        {"name": "亞洲金融風暴與產業外移", "start": 1997, "end": 2000, "type": "negative", "desc": "風暴加速東亞供應鏈重組，台灣傳統勞力密集產業大量外移至中國大陸，面臨「結構性失業」，失業率基準線永久性抬升。"},
-        {"name": "全球金融海嘯", "start": 2008, "end": 2009, "type": "negative", "desc": "出口訂單急凍，科技業與製造業廣泛實施「無薪假」與大量裁員，失業率創下 6.13% 的歷史新高。"}
-    ],
-    ID_通膨: [
-        {"name": "第一次石油危機", "start": 1973, "end": 1974, "type": "negative", "desc": "原油價格短時間翻數倍，引發嚴重輸入性通膨。1974年台灣 CPI 年增率飆升超過 47%。"},
-        {"name": "俄烏戰爭與供應鏈瓶頸", "start": 2022, "end": 2023, "type": "negative", "desc": "戰爭致穀物與能源價格大漲，疊加疫情造成的塞港與晶片短缺。台灣 CPI 多次突破 3% 警戒線。"}
-    ],
-    ID_GDP: [
-        {"name": "《廣場協議》與台幣升值", "start": 1985, "end": 1989, "type": "positive", "desc": "美日等國協議逼迫美元貶值，新台幣兌美元大幅升值。在強勢匯率換算下，以美元計價的平均每人名目 GDP 呈現跳躍式翻倍成長。"},
-        {"name": "中美貿易戰與 AI 浪潮", "start": 2018, "end": 2023, "type": "positive", "desc": "中美貿易戰促使高附加價值生產線回流，加上 AI 伺服器需求爆發，帶動產業升級與出口擴張，名目 GDP 突破 3 萬美元大關。"}
-    ],
-    ID_貿易: [
-        {"name": "推動十大建設", "start": 1974, "end": 1978, "type": "negative", "desc": "政府為轉型推動重工業與基礎建設，需自國外大量進口重型機具、原物料與技術設備，龐大進口需求使貿易順差大幅收斂甚至出現短暫逆差。"},
-        {"name": "疫情數位轉型與晶片荒", "start": 2020, "end": 2022, "type": "positive", "desc": "全球居家辦公與數位轉型狂潮，對半導體晶片與 ICT 硬體需求爆發。台灣憑藉供應鏈優勢，出口額屢創新高，創造史無前例的巨大貿易順差。"}
-    ]
-}
-
-# 側邊欄：檔案狀態
-st.sidebar.header("🛠️ 數據源狀態")
-current_files = os.listdir('.')
-excel_files = [f for f in current_files if f.endswith('.xlsx') or f.endswith('.xls') or f.endswith('.csv')]
-st.sidebar.info(f"📂 目錄下找到 {len(excel_files)} 個潛在資料檔。")
-
-# ==========================================
-# 數據解析與處理引擎
-# ==========================================
-def parse_year(y):
-    if pd.isna(y): return np.nan
-    s = str(y)
-    match = re.search(r'\d{2,4}', s)
-    if not match: return np.nan
-    y_int = int(match.group())
-    return y_int + 1911 if y_int < 1500 else y_int
-
-def parse_value(v):
-    if pd.isna(v): return np.nan
-    s = str(v).replace(',', '').strip()
-    if s == '-': return np.nan
-    match = re.search(r'-?(?:\d+\.?\d*|\.\d+)', s)
-    if not match: return np.nan
-    return float(match.group())
-
-def read_any_format(file_path):
-    try:
-        df = pd.read_excel(file_path, header=None, dtype=str)
-        if len(df.columns) >= 2: return df
-    except: pass
-    encodings = ['utf-8-sig', 'big5', 'cp950', 'utf-8']
-    for enc in encodings:
-        try:
-            df = pd.read_csv(file_path, header=None, dtype=str, encoding=enc, on_bad_lines='skip')
-            if len(df.columns) >= 2: return df
-        except: continue
-    return None
-
-def extract_from_matrix(df, col_mapping):
-    merged_df = pd.DataFrame(columns=['年份'])
-    for std_name, kws in col_mapping.items():
-        found = False
-        for r in range(min(50, len(df))):
-            for c in range(len(df.columns)):
-                val = str(df.iat[r, c]).replace(' ', '').lower()
-                if val in ['nan', 'none', '']: continue
-                if any(kw.lower() in val for kw in kws):
-                    val_col_idx = c
-                    year_col_idx = -1
-                    for yc in range(len(df.columns)):
-                        if any(k in str(df.iat[r, yc]) for k in ['年', '期', '月']):
-                            year_col_idx = yc
-                            break
-                    if year_col_idx == -1:
-                        for yc in range(len(df.columns)):
-                            # ⚠️ 在此處修復了 TypeError (確保所有元素都被強制轉換為字串)
-                            col_text = "".join([str(x) for x in df.iloc[:min(10, len(df)), yc]]).replace(' ', '')
-                            if any(k in col_text for k in ['年', '期', '月']):
-                                year_col_idx = yc
-                                break
-                    if year_col_idx != -1:
-                        years = [parse_year(y) for y in df.iloc[r+1:, year_col_idx]]
-                        vals = [parse_value(v) for v in df.iloc[r+1:, val_col_idx]]
-                        temp_df = pd.DataFrame({'年份': years, std_name: vals})
-                        temp_df = temp_df.dropna(subset=['年份', std_name], how='any')
-                        if not temp_df.empty:
-                            temp_df = temp_df.groupby('年份').first().reset_index()
-                            if merged_df.empty or '年份' not in merged_df.columns:
-                                merged_df = temp_df
-                            else:
-                                merged_df = pd.merge(merged_df, temp_df, on='年份', how='outer')
-                        found = True
-                        break
-            if found: break
-    if not merged_df.empty:
-        merged_df['年份'] = merged_df['年份'].astype(int)
-    return merged_df
-
-def find_file(keyword):
-    for f in excel_files:
-        if keyword.lower() in f.lower(): return f
-    return None
 
 @st.cache_data
-def load_all_data():
-    dfs = []
-    tasks = [
-        {'kw': '重貼現', 'map': {ID_利率: ['重貼現']}},
-        {'kw': '失業', 'map': {ID_失業: ['失業']}},
-        {'kw': 'cpi', 'map': {ID_通膨: ['總指數', 'cpi']}},
-        {'kw': 'gdp', 'map': {ID_成長: ['經濟成長'], ID_GDP: ['名目', '每人', 'gdp']}},
-        {'kw': '貿易', 'map': {ID_貿易: ['出(入)超', '出超', '差額']}},
-        {'kw': 'm2', 'map': {ID_M2: ['年增率', 'm2']}}
-    ]
-    
-    for task in tasks:
-        file_name = find_file(task['kw'])
-        if file_name:
-            raw_df = read_any_format(file_name)
-            if raw_df is not None:
-                df = extract_from_matrix(raw_df, task['map'])
-                if not df.empty and len(df.columns) > 1:
-                    dfs.append(df)
-                    st.sidebar.success(f"✅ 成功萃取：{file_name}")
-                else:
-                    st.sidebar.warning(f"⚠️ `{file_name}` 無有效數據。")
-            else:
-                st.sidebar.error(f"❌ 解析失敗：`{file_name}`")
-        else:
-            st.sidebar.error(f"❌ 找不到包含「{task['kw']}」的檔案。")
+def load_and_process_data():
+    """讀取 TXT 檔案並轉換為季度資料。"""
+    df_q = pd.read_csv(FILE_QUARTERLY, sep="\t")
+    df_d = pd.read_csv(FILE_DAILY, sep="\t")
 
-    if not dfs: return pd.DataFrame()
-        
-    df_merged = pd.DataFrame({'年份': range(1970, 2026)})
-    for df in dfs:
-        df_merged = pd.merge(df_merged, df, on='年份', how='outer')
-            
-    df_merged = df_merged.sort_values('年份').reset_index(drop=True)
-    df_merged = df_merged.dropna(subset=[c for c in df_merged.columns if c != '年份'], how='all')
-    return df_merged
+    # 日資料：每季取最後一筆交易資料
+    df_d["年月日"] = pd.to_datetime(
+        df_d["年月日"].astype(str).str.strip(), format="%Y%m%d"
+    )
+    df_d = df_d.sort_values("年月日")
+    df_d["Quarter"] = df_d["年月日"].dt.to_period("Q")
+    df_d_q = df_d.groupby("Quarter", as_index=False).last()
+    df_d_q["Quarter_str"] = df_d_q["Quarter"].astype(str)
 
-# ==========================================
-# 主介面與繪圖邏輯
-# ==========================================
-st.title("📈 台灣總體經濟 7 大指標歷史知識儀表板")
-st.markdown("自 1970 年至今，重大公開事件對核心經濟指標的影響分析。")
+    # 季資料
+    df_q["年月"] = df_q["年月"].astype(str).str.strip()
+    df_q["Year"] = df_q["年月"].str[:4]
+    df_q["Quarter_str"] = (
+        df_q["Year"] + "Q" + df_q["季別"].astype(str).str.strip()
+    )
 
-data = load_all_data()
-current_indicators = [col for col in data.columns if col != '年份']
+    merged_df = pd.merge(df_d_q, df_q, on="Quarter_str", how="inner")
+    merged_df["估值指標(PB/MB)"] = pd.to_numeric(
+        merged_df["股價淨值比-TEJ"], errors="coerce"
+    )
 
-if len(current_indicators) > 0:
-    st.header("1. 指標走勢與重大事件傳導機制分析")
-    
-    selected_indicator = st.selectbox("請選擇您要觀察的經濟指標：", current_indicators)
-    
-    plot_data = data.dropna(subset=[selected_indicator])
-    
-    if not plot_data.empty:
-        fig1 = go.Figure()
-        fig1.add_trace(go.Scatter(
-            x=plot_data['年份'], 
-            y=plot_data[selected_indicator], 
-            mode='lines+markers', 
-            name=selected_indicator, 
-            line=dict(width=3, color='#3366CC'),
-            hovertemplate="<b>%{x}年</b><br>" + selected_indicator + ": %{y}<extra></extra>"
-        ))
-        
-        related_events = MACRO_EVENTS_KNOWLEDGE_BASE.get(selected_indicator, [])
-        
-        for event in related_events:
-            if event["type"] == "positive":
-                fill_color = "rgba(0, 200, 0, 0.15)"
-                label_color = "green"
-            elif event["type"] == "negative":
-                fill_color = "rgba(230, 0, 0, 0.15)"
-                label_color = "red"
-            else:
-                fill_color = "rgba(100, 100, 100, 0.1)"
-                label_color = "black"
-            
-            fig1.add_vrect(
-                x0=event["start"], x1=event["end"], 
-                fillcolor=fill_color, layer="below", line_width=0
-            )
-            
-            fig1.add_annotation(
-                x=(event["start"] + event["end"]) / 2,
-                y=1, yref="paper",
-                text=event["name"],
-                showarrow=False,
-                textangle=-90,
-                xanchor="center", yanchor="top",
-                font=dict(color=label_color, size=12),
-                yshift=-10
-            )
-            
-            dummy_years = list(range(event["start"], event["end"] + 1))
-            y_pos = plot_data[selected_indicator].max() if not plot_data.empty else 0
+    return merged_df.sort_values("Quarter_str").reset_index(drop=True)
 
-            fig1.add_trace(go.Scatter(
-                x=dummy_years,
-                y=[y_pos] * len(dummy_years),
-                mode='markers',
-                marker=dict(opacity=0, size=1),
-                name=event["name"],
-                hovertemplate=f"<b>【{event['name']}】</b><br>{event['start']}-{event['end']}<br>影響機制：{event['desc']}<extra></extra>",
-                showlegend=False
-            ))
-            
-        fig1.update_layout(
-            title=f"<b>{selected_indicator}</b> 歷史走勢與重大事件映射",
-            xaxis_title="年份",
-            yaxis_title=selected_indicator,
-            hovermode="closest",
-            height=600,
-            xaxis=dict(tickmode='linear', dtick=5)
+
+def main():
+    st.title("📈 台積電 (2330) 估值動態分析與決策系統")
+    st.markdown(
+        "本系統整合**市值淨值比 (M/B)** 與 **股價淨值比 (P/B)**，"
+        "透過歷史分位數模型，動態評估當前股價位階。"
+    )
+
+    # 雲端部署時，兩個 TXT 必須和 app.py 一起放在 GitHub repository。
+    missing = [p.name for p in (FILE_QUARTERLY, FILE_DAILY) if not p.exists()]
+    if missing:
+        st.error("❌ GitHub repository 尚缺少資料檔：" + ", ".join(missing))
+        st.info(
+            "請將上述 TXT 檔放到 GitHub repository 根目錄；"
+            "Streamlit Community Cloud 會在 GitHub 更新後自動重新部署。"
         )
-        st.plotly_chart(fig1, use_container_width=True)
-        
-        with st.expander("💡 如何查看事件影響機制？", expanded=True):
-            st.markdown(f"""
-            1.  圖表中**紅色陰影**區間表示該事件對「{selected_indicator}」造成**負面衝擊或導致指標惡化**。
-            2.  **綠色陰影**區間表示該事件對指標有**正面推升或導致指標改善**的影響。
-            3.  將滑鼠懸停在陰影區間內的折線或上方標籤附近，將會浮現視窗顯示**具體的「影響機制（傳導機制）」**詳細說明。
-            """)
+        st.stop()
 
-    st.markdown("---")
-    
-    st.header("2. 總經指標綜合疊圖觀測 (Z-Score 標準化)")
-    st.markdown("此圖用以觀察各指標間的長期相關性與領先落後關係。陰影僅標示全球級特大事件。")
-    
-    df_overlap = data.dropna(subset=current_indicators).copy()
-    if not df_overlap.empty:
-        start_yr = df_overlap.iloc[0]['年份']
-        st.caption(f"數據交集起算年份：{int(start_yr)}")
-        
-        df_std = df_overlap.copy()
-        for col in current_indicators:
-            df_std[col] = (df_overlap[col] - df_overlap[col].mean()) / df_overlap[col].std()
-            
-        fig2 = go.Figure()
-        for col in current_indicators:
-            fig2.add_trace(go.Scatter(x=df_std['年份'], y=df_std[col], mode='lines', name=col))
-            
-        GLOBAL_MAJOR_EVENTS = [
-            {"name": "第一次石油危機", "start": 1973, "end": 1974},
-            {"name": "網路泡沫", "start": 2000, "end": 2001},
-            {"name": "全球金融海嘯", "start": 2008, "end": 2009},
-            {"name": "新冠疫情爆發", "start": 2020, "end": 2021},
-        ]
-        
-        for event in GLOBAL_MAJOR_EVENTS:
-            if event["end"] >= start_yr:
-                fig2.add_vrect(
-                    x0=max(event["start"], start_yr), x1=event["end"], 
-                    fillcolor="rgba(100, 100, 100, 0.1)", layer="below", line_width=0, 
-                    annotation_text=event["name"], annotation_textangle=-90,
-                    annotation_position="top left", 
-                    annotation_font=dict(size=10, color="gray") 
-                )
-        
-        fig2.update_layout(yaxis_title="標準化分數 (Z-Score)", hovermode="x unified", height=650)
-        st.plotly_chart(fig2, use_container_width=True)
-    else:
-        st.warning("目前載入的數據無共同年份可繪製疊圖。")
-else:
-    st.error("⚠️ 無法讀取任何指標資料，請確認本機目錄下有符合關鍵字的 Excel/CSV 檔案。")
+    try:
+        df = load_and_process_data()
 
+        pb_series = df["估值指標(PB/MB)"].dropna()
+        if pb_series.empty:
+            st.error("❌ 找不到有效的『股價淨值比-TEJ』資料。")
+            st.stop()
+
+        pb_25 = pb_series.quantile(0.25)
+        pb_75 = pb_series.quantile(0.75)
+
+        latest_data = df.dropna(subset=["估值指標(PB/MB)"]).iloc[-1]
+        latest_q = latest_data["Quarter_str"]
+        latest_pb = latest_data["估值指標(PB/MB)"]
+        latest_cap = latest_data["市值(百萬元)"]
+        latest_pe = latest_data["當季季底P/E"]
+        latest_growth = latest_data["淨值成長率"]
+
+        st.divider()
+        st.subheader(f"📊 最新季度估值診斷 ({latest_q})")
+
+        if latest_pb <= pb_25:
+            status = "便宜 (Undervalued)"
+            reason = f"""
+            **判斷原因 (便宜)：**
+            1. **跌破歷史估值下緣**：當前 P/B 為 **{latest_pb:.2f} 倍**，已低於歷史 25% 分位數（{pb_25:.2f} 倍）。
+            2. **安全邊際較高**：從資產估值角度來看，市場定價處於相對低位。
+            3. **基本面輔助**：目前本益比(P/E)為 {latest_pe} 倍，淨值成長率為 {latest_growth}%。
+            """
+            st.success(f"### 目前股價位階：【{status}】")
+        elif latest_pb >= pb_75:
+            status = "昂貴 (Overvalued)"
+            reason = f"""
+            **判斷原因 (昂貴)：**
+            1. **突破歷史估值上緣**：當前 P/B 為 **{latest_pb:.2f} 倍**，已高於歷史 75% 分位數（{pb_75:.2f} 倍）。
+            2. **市場溢價較高**：此位階代表市場對未來成長的預期已反映較多。
+            3. **基本面輔助**：最新本益比(P/E)為 {latest_pe} 倍，淨值成長率為 {latest_growth}%。
+            """
+            st.error(f"### 目前股價位階：【{status}】")
+        else:
+            status = "合理區間 (Fair Value)"
+            reason = f"""
+            **判斷原因 (合理)：**
+            當前 P/B 為 **{latest_pb:.2f} 倍**，落在歷史 25%~75% 區間（{pb_25:.2f} ~ {pb_75:.2f} 倍）內。
+            市場給予的估值處於合理中性水位。
+            """
+            st.warning(f"### 目前股價位階：【{status}】")
+
+        st.info(reason)
+
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("最新 P/B（M/B）", f"{latest_pb:.2f} 倍")
+        col2.metric("最新季底總市值", f"{latest_cap:,.0f} 百萬元")
+        col3.metric("歷史 25% 分位數", f"{pb_25:.2f} 倍")
+        col4.metric("歷史 75% 分位數", f"{pb_75:.2f} 倍")
+
+        st.divider()
+        st.subheader("📈 趨勢互動圖表（支援游標懸浮、縮放）")
+
+        fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+        fig.add_trace(
+            go.Bar(
+                x=df["Quarter_str"],
+                y=df["市值(百萬元)"],
+                name="季底總市值 (百萬元)",
+                opacity=0.7,
+            ),
+            secondary_y=False,
+        )
+
+        fig.add_trace(
+            go.Scatter(
+                x=df["Quarter_str"],
+                y=df["估值指標(PB/MB)"],
+                name="P/B & M/B",
+                mode="lines+markers",
+                line=dict(width=3),
+                marker=dict(size=8),
+            ),
+            secondary_y=True,
+        )
+
+        fig.add_hline(
+            y=pb_75,
+            line_dash="dash",
+            annotation_text=f"昂貴線 75% ({pb_75:.2f})",
+            secondary_y=True,
+        )
+        fig.add_hline(
+            y=pb_25,
+            line_dash="dash",
+            annotation_text=f"便宜線 25% ({pb_25:.2f})",
+            secondary_y=True,
+        )
+
+        fig.update_layout(
+            title_text="台積電 季度市值與淨值比估值走勢",
+            hovermode="x unified",
+            legend=dict(
+                orientation="h", yanchor="bottom", y=1.02,
+                xanchor="right", x=1
+            ),
+            height=650,
+        )
+        fig.update_yaxes(
+            title_text="總市值 (百萬元)", secondary_y=False, tickformat=","
+        )
+        fig.update_yaxes(
+            title_text="淨值比倍數 (P/B & M/B)", secondary_y=True
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+        with st.expander("📂 展開查看完整歷史季資料明細"):
+            st.dataframe(
+                df[
+                    [
+                        "Quarter_str",
+                        "市值(百萬元)",
+                        "估值指標(PB/MB)",
+                        "淨值成長率",
+                        "當季季底P/E",
+                    ]
+                ],
+                use_container_width=True,
+            )
+
+    except Exception as e:
+        st.error(f"❌ 發生資料處理錯誤：{e}")
+
+
+if __name__ == "__main__":
+    main()
