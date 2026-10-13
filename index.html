@@ -1,226 +1,41 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>台積電 2330｜2021–2026/08 月營收與 YoY 互動分析</title>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2330 台積電財務數據與預測分析網站</title>
 <script src="https://cdn.plot.ly/plotly-3.3.0.min.js"></script>
 <style>
-body{font-family:"Microsoft JhengHei",Arial,sans-serif;background:#f4f6f8;margin:0;padding:22px;color:#333}
-.container{max-width:1250px;margin:auto;background:#fff;padding:28px 32px 40px;border-radius:14px;box-shadow:0 4px 18px rgba(0,0,0,.10)}
-h1{text-align:center;margin-top:0}
-.intro{background:#f1f4f7;border-left:6px solid #4C72B0;padding:18px 22px;border-radius:8px;line-height:1.8}
-.legend{display:flex;gap:20px;justify-content:center;margin:16px 0;font-weight:bold}
-.legend span{padding:6px 12px;border-radius:6px}
-.up{color:#c62828;background:#ffebee}.down{color:#2e7d32;background:#e8f5e9}
-#chart{width:100%;height:700px}
-.hint{text-align:center;color:#666;margin:10px 0 20px}
-.modal{display:none;position:fixed;z-index:9999;inset:0;background:rgba(0,0,0,.55);align-items:center;justify-content:center;padding:18px}
-.modal.show{display:flex}
-.card{width:min(760px,94vw);max-height:88vh;overflow:auto;background:white;border-radius:16px;padding:30px;box-shadow:0 15px 50px rgba(0,0,0,.3);position:relative}
-.close{position:absolute;right:16px;top:8px;border:0;background:none;font-size:32px;color:#666;cursor:pointer}
-.badge{display:inline-block;padding:5px 12px;border-radius:999px;font-size:13px;font-weight:bold;margin-bottom:10px}
-.card h2{margin:0 45px 8px 0}
-.metric{font-size:17px;color:#555;margin:12px 0 20px}
-.reason{background:#f8fafc;border-left:6px solid #4C72B0;border-radius:8px;padding:18px;line-height:1.85;font-size:16px}
-.reason ul{margin:8px 0 0 20px;padding:0}
-.source{font-size:13px;color:#666;margin-top:18px;line-height:1.7}
-.source a{color:#1565c0}
-.section{margin-top:28px}
-table{border-collapse:collapse;width:100%;font-size:14px}
-th,td{padding:9px;border-bottom:1px solid #ddd;text-align:left}
-th{background:#f1f3f5}
-</style>
-</head>
-<body>
-<div class="container">
-<h1>台積電（2330）2021–2026/08 月營收與年增率互動分析</h1>
-<div class="intro">
-<strong>資料區間：</strong>2021 年 1 月至 2026 年 8 月（目前台積電官方已公布的最新月營收）。2026 年 9 月尚未公布，台積電財務日程顯示預計於 2026/10/08 公布。<br>
-<strong>上方圖：</strong>月營收（十億元）；<strong>下方圖：</strong>YoY 年增率。紅色代表 YoY > 0，綠色代表 YoY < 0。<br>
-<strong>互動方式：</strong>點擊任一月份的柱狀圖、YoY 點，或下方紅／綠色區段，即可查看該時期的詳細原因。
+body{background:#ecf0f1;margin:0;padding:20px;font-family:"Microsoft JhengHei",Arial,sans-serif;color:#333}
+main{max-width:1200px;margin:auto}.panel{background:#fff;padding:24px;border-radius:12px;margin:0 auto 22px;box-shadow:0 4px 12px #0001}
+h1,h2{color:#2c3e50}.forecast{background:#e9eff5;padding:20px 28px;border-left:5px solid #4c72b0;border-radius:8px;line-height:1.8}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}.metric{background:#f8f9fa;padding:16px;border-radius:8px}.metric strong{display:block;color:#c0392b;font-size:25px;margin-top:8px}
+#chart{width:100%;height:650px}.note{font-size:14px;color:#666;line-height:1.7}
+</style></head>
+<body><main>
+<section class="panel">
+<h1>📊 2330 台積電財務數據與預測分析網站</h1>
+<div class="forecast">
+<h2>2026 年下半年與全年 EPS 預測</h2>
+<p>本頁採用歷史旺季平均季增長模型作為情境推估：過去四年第三季較第二季平均成長約 19.85%，第四季較第三季平均成長約 11.35%。</p>
+<div class="metrics">
+<div class="metric">2026 Q2 單季 EPS<strong>27.25</strong></div>
+<div class="metric">2026 Q3 預估 EPS<strong>32.66</strong></div>
+<div class="metric">2026 Q4 預估 EPS<strong>36.37</strong></div>
+<div class="metric">2026 全年預估 EPS<strong>118.36</strong></div>
 </div>
-<div class="legend"><span class="up">▲ 上升／正 YoY</span><span class="down">▼ 下降／負 YoY</span></div>
-<div class="hint">💡 圖表已拆成「月營收」與「YoY」兩區；點擊資料點或色塊查看原因</div>
-<div id="chart"></div>
-<div class="section">
-<h2>如何解讀</h2>
-<p>月營收本身容易受到季節性影響，因此本頁以你原程式的 <strong>YoY</strong> 作為上升／下降判斷基準。色塊不是在表示「本月比上月上升」，而是表示「本月比去年同月上升或下降」。</p>
-</div>
-</div>
-
-<div id="modal" class="modal" onclick="closeModal(event)">
-<div class="card" onclick="event.stopPropagation()">
-<button class="close" onclick="closeModal()">×</button>
-<div id="modalContent"></div>
-</div>
-</div>
-
+<p class="note">計算方式：(上半年已知 22.08 + 27.25) + (下半年推估 32.66 + 36.37)。Q3、Q4 與全年數字為模型推估，並非公司正式財測或已公布實績。</p>
+</div></section>
+<section class="panel"><h2>📈 2022–2026 季度 EPS 與預測情境</h2><div id="chart"></div>
+<p class="note">圖表呈現頁面中的 2026 年 EPS 推估情境。完整歷史財務指標請以台積電公告及原始資料為準。</p></section>
+</main>
 <script>
-const labels=["2015-01","2015-02","2015-03","2015-04","2015-05","2015-06","2015-07","2015-08","2015-09","2015-10","2015-11","2015-12","2016-01","2016-02","2016-03","2016-04","2016-05","2016-06","2016-07","2016-08","2016-09","2016-10","2016-11","2016-12","2017-01","2017-02","2017-03","2017-04","2017-05","2017-06","2017-07","2017-08","2017-09","2017-10","2017-11","2017-12","2018-01","2018-02","2018-03","2018-04","2018-05","2018-06","2018-07","2018-08","2018-09","2018-10","2018-11","2018-12","2019-01","2019-02","2019-03","2019-04","2019-05","2019-06","2019-07","2019-08","2019-09","2019-10","2019-11","2019-12","2020-01","2020-02","2020-03","2020-04","2020-05","2020-06","2020-07","2020-08","2020-09","2020-10","2020-11","2020-12","2021-01","2021-02","2021-03","2021-04","2021-05","2021-06","2021-07","2021-08","2021-09","2021-10","2021-11","2021-12","2022-01","2022-02","2022-03","2022-04","2022-05","2022-06","2022-07","2022-08","2022-09","2022-10","2022-11","2022-12","2023-01","2023-02","2023-03","2023-04","2023-05","2023-06","2023-07","2023-08","2023-09","2023-10","2023-11","2023-12","2024-01","2024-02","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12","2025-01","2025-02","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05","2026-06","2026-07","2026-08"];
-const revenue=[87.12,62.645,72.269,75.33,70.155,59.955,80.953,67.038,64.514,81.743,63.428,58.347,70.855,59.551,73.089,66.843,73.576,81.391,76.392,94.311,89.703,91.085,93.03,78.112,76.616,71.423,85.875,56.872,72.796,84.187,71.611,91.917,88.579,94.52,93.153,89.897,79.741,64.641,103.697,81.87,80.969,70.438,74.371,91.055,94.922,101.55,98.389,89.831,78.094,60.889,79.722,74.694,80.437,85.868,84.758,106.118,102.17,106.04,107.884,103.313,103.683,93.394,113.52,96.002,93.819,120.878,105.963,122.878,127.585,119.303,124.865,117.365,126.749,106.534,129.127,111.315,112.36,148.471,124.558,137.427,152.685,134.539,148.268,155.382,172.176,146.933,171.967,172.561,185.705,175.874,186.763,218.132,208.248,210.266,222.706,192.56,200.051,163.174,145.408,147.9,176.537,156.404,177.616,188.686,180.43,243.203,206.026,176.3,215.785,181.648,195.211,236.021,229.62,207.869,256.953,250.866,251.873,314.24,276.058,278.163,293.288,260.009,285.957,349.567,320.516,263.709,323.166,335.772,330.98,367.473,343.614,335.003,401.255,317.657,415.191,410.726,416.975,442.68,467.58,514.806];
-const yoy=[69.4,33.8,44.7,21.7,15.4,-0.6,24.7,-3.2,-13.8,1.2,-12.2,-16.1,-18.7,-4.9,1.1,-11.3,4.9,35.8,-5.6,40.7,39,11.4,46.7,33.9,8.1,19.9,17.5,-14.9,-1.1,3.4,-6.3,-2.5,-1.3,3.8,0.1,15.1,4.1,-9.5,20.8,44,11.2,-16.3,3.9,-0.9,7.2,7.4,5.6,-0.1,-2.1,-5.8,-23.1,-8.8,-0.7,21.9,14,16.5,7.6,4.4,9.7,15,32.8,53.4,42.4,28.5,16.6,40.8,25,15.8,24.9,12.5,15.7,13.6,22.2,14.1,13.7,16,19.8,22.8,17.5,11.8,19.7,12.8,18.7,32.4,35.8,37.9,33.2,55,65.3,18.5,49.9,58.7,36.4,56.3,50.2,23.9,16.2,11.1,-15.4,-14.3,-4.9,-11.1,-4.9,-13.5,-13.4,15.7,-7.5,-8.4,7.9,11.3,34.3,59.6,30.1,32.9,44.7,33,39.6,29.2,34,57.8,35.9,43.1,46.5,48.1,39.6,26.9,25.8,33.8,31.4,16.9,24.5,20.4,36.8,22.2,45.2,17.5,30.1,67.9,44.7,53.3];
-
-const reasons=[
-{start:"2015-01",end:"2018-12",title:"2015–2018：行動裝置與先進製程帶動，但月度波動明顯",
-bullets:["智慧型手機仍是晶圓需求的重要來源，營收受到產品週期與季節性影響。","16nm、10nm、7nm 等先進製程逐步量產，部分期間帶動營收成長。","因此這一階段雖長期向上，但月度 YoY 經常在正負之間切換，不能把單月負成長直接解讀為景氣反轉。"],
-source:"台積電歷年月營業額資料：2015–2018。"},
-{start:"2018-12",end:"2019-05",title:"2018 年底–2019 年 5 月：半導體景氣調整期",
-bullets:["2019 年初多個月份 YoY 為負，3 月降幅達 -23.1%，反映前期半導體需求與庫存調整。","智慧型手機等終端市場成長放緩，使晶圓需求承壓。","2019 年 6 月起 YoY 重新轉正，之後連續維持正成長，顯示需求逐步改善。"],
-source:"台積電 2019 年月營收資料。"},
-{start:"2019-06",end:"2023-02",title:"2019 年 6 月–2023 年 2 月：連續多年正 YoY，成長動能轉向 5G、HPC 與先進製程",
-bullets:["2019 年下半年起 YoY 重新轉正，7nm 等先進製程需求提供支撐。","2020 年受到 5G、HPC、居家工作與數位化需求推升，全年營收年增 25.2%。","2021 年 5G、HPC 等需求延續，全年營收年增 18.5%。","2022 年 5nm 家族快速放量、N4 進入量產，HPC 成為重要成長平台，全年營收年增 42.6%。"],
-source:"台積電 2020、2022 年年報及月營收資料。"},
-{start:"2023-03",end:"2023-09",title:"2023 年 3–9 月：半導體庫存調整造成 YoY 轉負",
-bullets:["2023 年 3 月開始連續多月低於去年同期，3 月 YoY 為 -15.4%。","台積電年報指出，全球半導體產業受到庫存調整、總體經濟疲弱及高通膨／高利率影響，庫存修正週期延長。","2023 年全年營收為 2.162 兆元，年減 4.5%，與這段期間的負 YoY 趨勢一致。"],
-source:"台積電 2023 年年報及 2023 月營收資料。"},
-{start:"2023-10",end:"2023-10",title:"2023 年 10 月：短暫轉正",
-bullets:["10 月 YoY 回升至 +15.7%，是 2023 年庫存調整期間的明顯反彈月份。","單月轉正不代表全年景氣已完全反轉；11、12 月 YoY 又回到負值。","因此這一點較適合解讀為月度需求／產品週期波動，而不是單獨視為長期趨勢改變。"],
-source:"台積電 2023 年月營收資料。"},
-{start:"2023-11",end:"2023-12",title:"2023 年 11–12 月：年增再次轉負",
-bullets:["11 月與 12 月 YoY 分別為 -7.5% 與 -8.4%。","這與 2023 年整體庫存調整尚未完全結束的背景一致。","2024 年開始，YoY 才重新進入長時間正成長區段。"],
-source:"台積電 2023 年月營收及 2023 年年報。"},
-{start:"2024-01",end:"2026-08",title:"2024–2026：AI、HPC、先進製程與先進封裝成為主要成長來源",
-bullets:["2024 年台積電指出 AI 相關需求強勁，3nm 在第二年量產，且先進邏輯與先進封裝需求帶動營收復甦。","2024 年全年營收年增 33.9%；2025 年全年營收再增 31.6%，台積電表示 AI 相關需求全年保持強勁。","2026 年 1–8 月官方累計營收達 3.387 兆元、年增 39.3%；其中 6 月 YoY +67.9%，8 月 +53.3%。","因此目前這一大段連續正 YoY 的核心背景，可歸納為 AI／HPC 需求、先進製程與先進封裝的結構性需求。"],
-source:"台積電 2024、2025 年年報與 2026 Q2 結果、2026 月營收資料。"}
-];
-
-function findReason(period){
-for(const r of reasons){
-if(period>=r.start && period<=r.end)return r;
-}
-return reasons[reasons.length-1];
-}
-function openModal(i){
-const period=labels[i],r=findReason(period),up=yoy[i]>=0;
-document.getElementById("modalContent").innerHTML=
-'<span class="badge '+(up?'up':'down')+'">'+(up?'▲ 上升區段':'▼ 下降區段')+'</span>'+
-'<h2>'+period+'：'+r.title+'</h2>'+
-'<div class="metric">月營收：<strong>NT$ '+revenue[i].toFixed(3)+' 十億元</strong>　｜　YoY：<strong>'+yoy[i].toFixed(1)+'%</strong></div>'+
-'<div class="reason"><strong>為什麼會上升／下降？</strong><ul>'+r.bullets.map(x=>'<li>'+x+'</li>').join('')+'</ul></div>'+
-'<div class="source"><strong>資料依據：</strong>'+r.source+'<br>※ 原因為依台積電公開年報、季度資料及月營收資料整理；單月變動可能同時受到季節性、產品出貨時程及基期影響。</div>';
-document.getElementById("modal").classList.add("show");
-document.body.style.overflow="hidden";
-}
-function closeModal(e){
-if(e && e.target!==e.currentTarget)return;
-document.getElementById("modal").classList.remove("show");
-document.body.style.overflow="";
-}
-document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal();});
-
-
-const labels=["2021-01","2021-02","2021-03","2021-04","2021-05","2021-06","2021-07","2021-08","2021-09","2021-10","2021-11","2021-12","2022-01","2022-02","2022-03","2022-04","2022-05","2022-06","2022-07","2022-08","2022-09","2022-10","2022-11","2022-12","2023-01","2023-02","2023-03","2023-04","2023-05","2023-06","2023-07","2023-08","2023-09","2023-10","2023-11","2023-12","2024-01","2024-02","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12","2025-01","2025-02","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05","2026-06","2026-07","2026-08"];
-const revenue=[126.749,106.534,129.127,111.315,112.36,148.471,124.558,137.427,152.685,134.539,148.268,155.382,172.176,146.933,171.967,172.561,185.705,175.874,186.763,218.132,208.248,210.266,222.706,192.56,200.051,163.174,145.408,147.9,176.537,156.404,177.616,188.686,180.43,243.203,206.026,176.3,215.785,181.648,195.211,236.021,229.62,207.869,256.953,250.866,251.873,314.24,276.058,278.163,293.288,260.009,285.957,349.567,320.516,263.709,323.166,335.772,330.98,367.473,343.614,335.003,401.255,317.657,415.191,410.726,416.975,442.68,467.58,514.806];
-const yoy=[22.2,14.1,13.7,16,19.8,22.8,17.5,11.8,19.7,12.8,18.7,32.4,35.8,37.9,33.2,55,65.3,18.5,49.9,58.7,36.4,56.3,50.2,23.9,16.2,11.1,-15.4,-14.3,-4.9,-11.1,-4.9,-13.5,-13.4,15.7,-7.5,-8.4,7.9,11.3,34.3,59.6,30.1,32.9,44.7,33,39.6,29.2,34,57.8,35.9,43.1,46.5,48.1,39.6,26.9,25.8,33.8,31.4,16.9,24.5,20.4,36.8,22.2,45.2,17.5,30.1,67.9,44.7,53.3];
-
-const maxRevenue=Math.max(...revenue)*1.12;
-const maxYoy=Math.max(...yoy)+8;
-const minYoy=Math.min(...yoy)-8;
-
-const segments=[];
-let s=0;
-for(let i=1;i<=labels.length;i++){
-  if(i===labels.length || (yoy[i]>=0)!==(yoy[s]>=0)){
-    segments.push({s:s,e:i-1,up:yoy[s]>=0});
-    s=i;
-  }
-}
-
-const shapes=segments.map(seg=>({
-  type:"rect",
-  xref:"x",
-  yref:"paper",
-  x0:labels[seg.s],
-  x1:labels[seg.e],
-  y0:0.06,
-  y1:0.46,
-  fillcolor:seg.up?"rgba(211,47,47,.10)":"rgba(46,125,50,.10)",
-  line:{width:1,color:seg.up?"rgba(198,40,40,.35)":"rgba(46,125,50,.35)"},
-  layer:"below"
-}));
-
-const traceRevenue={
-  x:labels,y:revenue,type:"bar",name:"月營收（十億元）",
-  marker:{color:"#4C72B0",opacity:.86},
-  customdata:labels.map((x,i)=>[x,yoy[i]]),
-  hovertemplate:"<b>%{x}</b><br>月營收：%{y:.3f} 十億元<br>YoY：%{customdata[1]:.1f}%<br><i>點擊查看原因</i><extra></extra>",
-  xaxis:"x",yaxis:"y"
-};
-
-const traceYoy={
-  x:labels,y:yoy,type:"scatter",mode:"lines+markers",name:"YoY 年增率 (%)",
-  line:{color:"#333",width:2.2},
-  marker:{color:yoy.map(v=>v>=0?"#d32f2f":"#2e7d32"),size:7},
-  customdata:labels.map((x,i)=>[x,yoy[i]]),
-  hovertemplate:"<b>%{x}</b><br>YoY：%{y:.1f}%<br><i>點擊查看原因</i><extra></extra>",
-  xaxis:"x",yaxis:"y2"
-};
-
-const segmentTraces=segments.map(seg=>{
-  const x=[labels[seg.s],labels[seg.e],labels[seg.e],labels[seg.s]];
-  const y=[minYoy,minYoy,maxYoy,maxYoy];
-  return {
-    x,y,type:"scatter",mode:"lines",fill:"toself",
-    fillcolor:seg.up?"rgba(211,47,47,.025)":"rgba(46,125,50,.025)",
-    line:{color:"rgba(0,0,0,0)",width:1},
-    showlegend:false,hoverinfo:"skip",
-    customdata:[[labels[seg.s],labels[seg.e],seg.up]],
-    hovertemplate:"<b>%{customdata[0]} ～ %{customdata[1]}</b><br>"+(seg.up?"上升區段":"下降區段")+"<br><i>點擊查看原因</i><extra></extra>",
-    xaxis:"x",yaxis:"y2"
-  };
-});
-
-Plotly.newPlot("chart",[...segmentTraces,traceRevenue,traceYoy],{
-  title:{
-    text:"台積電（2330）月營收與 YoY 趨勢｜2021–2026/08",
-    font:{size:20}
-  },
-  xaxis:{
-    title:"年月",
-    type:"category",
-    tickangle:-45,
-    tickmode:"auto",
-    nticks:24,
-    domain:[0,1],
-    anchor:"y2"
-  },
-  yaxis:{
-    title:"月營收（十億元）",
-    domain:[0.54,1],
-    rangemode:"tozero",
-    gridcolor:"#e5e7eb"
-  },
-  yaxis2:{
-    title:"YoY 年增率（%）",
-    domain:[0,0.46],
-    range:[minYoy,maxYoy],
-    zeroline:true,
-    zerolinecolor:"#777",
-    gridcolor:"#eeeeee"
-  },
-  shapes:shapes,
-  hovermode:"x unified",
-  margin:{t:75,b:115,l:75,r:45},
-  legend:{orientation:"h",y:1.08,x:0},
-  plot_bgcolor:"#fff",
-  paper_bgcolor:"#fff",
-  font:{family:"Microsoft JhengHei, Arial, sans-serif"}
+const quarters=["2026 Q2 實績輸入值","2026 Q3 預估","2026 Q4 預估"];
+const eps=[27.25,32.66,36.37];
+Plotly.newPlot("chart",[
+{x:quarters,y:eps,type:"bar",text:eps.map(v=>v.toFixed(2)),textposition:"outside",marker:{color:["#4c72b0","#dd8452","#55a868"]},hovertemplate:"%{x}<br>EPS：%{y:.2f}<extra></extra>",name:"EPS"}
+],{
+title:{text:"2026 EPS 預估情境"},yaxis:{title:"每股盈餘（元）",rangemode:"tozero",gridcolor:"#e5e7eb"},
+margin:{t:60,b:100,l:65,r:30},paper_bgcolor:"#fff",plot_bgcolor:"#fff",
+font:{family:"Microsoft JhengHei, Arial, sans-serif"},showlegend:false
 },{responsive:true,displaylogo:false});
-
-document.getElementById("chart").on("plotly_click",function(data){
-  if(!data.points||!data.points.length)return;
-  const p=data.points[0];
-  if(p.data.name==="月營收（十億元）" || p.data.name==="YoY 年增率 (%)"){
-    openModal(p.pointNumber + 72);
-    return;
-  }
-  if(p.customdata && p.customdata[0]){
-    const period=p.customdata[0];
-    const idx=labels.indexOf(period);
-    if(idx>=0)openModal(idx + 72);
-  }
-});
-</script>
-</body>
-</html>
+</script></body></html>
